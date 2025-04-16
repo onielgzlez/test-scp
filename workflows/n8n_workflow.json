@@ -1,0 +1,148 @@
+{
+  "name": "AI Virtual Assistant Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ask",
+        "options": {
+          "responseMode": "noResponse"
+        }
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "ask"
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "url": "http://backend:7013/books/search",
+        "options": {
+          "timeout": 5000,
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "name": "Books API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "authentication": "none",
+        "url": "http://backend:7013/headlines?limit=2",
+        "options": {
+          "timeout": 5000,
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "name": "Headlines API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        400
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-3.5-turbo",
+        "prompt": "Based on the user query: {{$json.query}}\n\nBooks data: {{$node[\"Books API\"].json}}\n\nHacker News headlines: {{$node[\"Headlines API\"].json}}\n\nPlease provide a helpful response that combines the relevant information from both sources.",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 500
+        }
+      },
+      "name": "AI Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "continueOnFail": false
+    },
+    {
+      "parameters": {
+        "responseMode": "responseNode",
+        "options": {
+          "responseData": "={{$node[\"AI Agent\"].json}}"
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Books API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Headlines API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Books API": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Headlines API": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timeout": 30000
+  },
+  "tags": [],
+  "pinData": {}
+} 
