@@ -3,119 +3,135 @@
   "nodes": [
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "ask",
-        "options": {
-          "responseMode": "noResponse"
-        }
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
       },
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        250,
-        300
+        1400,
+        1040
       ],
-      "webhookId": "ask"
+      "webhookId": "ask",
+      "id": "314f6708-5878-47eb-ae42-b0914dbc9900"
     },
     {
       "parameters": {
-        "authentication": "none",
+        "promptType": "define",
+        "text": "{{ $json.body.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistant that answers questions about books and news headlines. You have access to two APIs:\\n\\n1. Books API: Use this API when the user's query contains ANY of these words:\\n   - book\\n   - price\\n   - category\\n   - title\\n  - under\\n   - recommend\\n   - search\\n   - find.\\n   The Books API provides titles, categories, image url, and prices.\\n\\n2. Headlines API: Use this API when the user's query contains ANY of these words:\\n  -show\\n  - tech\\n   - news\\n   - headlines\\n   - articles\\n  - trending\\n  - update\\n   - latest.\\n   The Headlines API provides titles, scores, and url.\\n\\nToday is {{ $now.format('cccc') }} {{ $now.format('yyyy-MM-dd HH:mm') }}."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1640,
+        920
+      ],
+      "id": "db26dc15-048f-47b7-bd5d-4527cb91d0aa",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Headlines API",
+        "url": "http://backend:7013/headlines",
+        "optimizeResponse": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1880,
+        1240
+      ],
+      "id": "04ffc6d1-be40-4199-955e-0f22c371cbd2",
+      "name": "Headlines API"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Books API",
         "url": "http://backend:7013/books/search",
-        "options": {
-          "timeout": 5000,
-          "allowUnauthorizedCerts": true
-        }
+        "optimizeResponse": true
       },
-      "name": "Books API",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 1,
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
       "position": [
-        450,
-        200
+        2000,
+        1220
       ],
-      "continueOnFail": true
+      "id": "1153f01a-84f3-4e5f-b515-f5663c14be07",
+      "name": "Books API"
     },
     {
       "parameters": {
-        "authentication": "none",
-        "url": "http://backend:7013/headlines?limit=2",
-        "options": {
-          "timeout": 5000,
-          "allowUnauthorizedCerts": true
-        }
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
       },
-      "name": "Headlines API",
-      "type": "n8n-nodes-base.httpRequest",
+      "name": "Response",
+      "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        450,
-        400
+        2060,
+        920
       ],
-      "continueOnFail": true
+      "id": "ee90b751-95ba-4be6-9870-03efb7cb3b28",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
-        "model": "openai/gpt-3.5-turbo",
-        "prompt": "Based on the user query: {{$json.query}}\n\nBooks data: {{$node[\"Books API\"].json}}\n\nHacker News headlines: {{$node[\"Headlines API\"].json}}\n\nPlease provide a helpful response that combines the relevant information from both sources.",
-        "options": {
-          "temperature": 0.7,
-          "maxTokens": 500
-        }
+        "modelName": "models/gemini-2.0-pro-exp",
+        "options": {}
       },
-      "name": "AI Agent",
-      "type": "n8n-nodes-base.openAi",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        650,
-        300
+        1560,
+        1220
       ],
-      "continueOnFail": false
+      "id": "469602d6-11a0-46ed-a71c-5ab1ef33e707",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bB44U9t6iboitJ1b",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
     },
     {
       "parameters": {
-        "responseMode": "responseNode",
-        "options": {
-          "responseData": "={{$node[\"AI Agent\"].json}}"
-        }
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}"
       },
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
       "position": [
-        850,
-        300
-      ]
+        1740,
+        1240
+      ],
+      "id": "ea5139c2-b88b-4782-98b9-9ae17e72d918",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "1mwImy3E4Pwvz6WV",
+          "name": "Redis account"
+        }
+      }
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Books API",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Headlines API",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Books API": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Headlines API": {
       "main": [
         [
           {
@@ -130,8 +146,52 @@
       "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Response",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Headlines API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Books API": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
             "index": 0
           }
         ]
@@ -140,9 +200,13 @@
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1",
-    "timeout": 30000
+    "executionOrder": "v1"
   },
-  "tags": [],
-  "pinData": {}
-} 
+  "versionId": "f4ff5b5c-ede3-47ee-843b-45c26b95fd8b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "306cb519cfbd1324a954d7e1f6fd4cc215b6e1e8d0e8f7252c23a9389be46bcf"
+  },
+  "id": "EHlWi2MBsusHcs7P",
+  "tags": []
+}
