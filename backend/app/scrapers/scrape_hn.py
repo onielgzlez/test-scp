@@ -33,26 +33,22 @@ class HackerNewsScraper:
         if self.driver:
             self.driver.quit()
 
-    def parse_story(self, story_element) -> Dict:
+    def parse_story(self, element) -> Optional[Dict]:
         """Parse a story element into a dictionary."""
         try:
-            title_element = story_element.find_element(By.CSS_SELECTOR, ".titleline > a")
-            title = title_element.text
-            url = title_element.get_attribute("href")
+            # Obtener el elemento siguiente que contiene el score
+            next_tr = element.find_element(By.XPATH, "following-sibling::tr[1]")
+            score_elem = next_tr.find_element(By.CSS_SELECTOR, ".score")
+            score = int(score_elem.text.split()[0])
             
-            # Try to get score, but don't fail if it's not present
-            score = 0
-            try:
-                score_element = story_element.find_element(By.CSS_SELECTOR, ".score")
-                score = int(score_element.text.split()[0])
-            except Exception as e:
-                logger.debug(f"No score found for story: {title}")
+            title_elem = element.find_element(By.CSS_SELECTOR, ".titleline a")
+            title = title_elem.text
+            url = title_elem.get_attribute("href")
             
-            logger.debug(f"Successfully parsed story: {title} with score {score}")
             return {
                 "title": title,
                 "score": score,
-                "url": url
+                "url": url,
             }
         except Exception as e:
             logger.error(f"Error parsing story: {str(e)}")
