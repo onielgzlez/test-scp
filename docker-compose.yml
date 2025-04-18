@@ -66,6 +66,7 @@ services:
      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
    volumes:
      - n8n_data:/home/node/.n8n
+     - ./workflows:/home/node/.n8n/workflows
    depends_on:
      - redis
 #      - backend

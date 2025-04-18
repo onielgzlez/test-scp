@@ -69,16 +69,7 @@ The system will automatically:
 To import the workflow and authentication files into the n8n container, use the following commands:
 
 ```bash
-# Import workflow
-docker cp workflows/n8n_workflow.json recruiter-dev-n8n:/home/node/.n8n/
-docker-compose exec n8n n8n import:workflow --input=/home/node/.n8n/n8n_workflow.json
-docker-compose exec n8n n8n update:workflow --all --active=true
-
-# Import authentication
-docker cp workflows/auth.json recruiter-dev-n8n:/home/node/.n8n/
-docker-compose exec n8n n8n import:credentials --input=/home/node/.n8n/auth.json
-
-# Restart n8n container to apply changes
+docker-compose exec n8n sh /home/node/.n8n/workflows/init-workflows.sh
 docker-compose restart n8n
 ```
 
@@ -114,7 +105,7 @@ Run tests inside Docker containers:
 docker-compose exec backend pytest
 
 # Frontend tests
-docker-compose exec frontend npm test
+docker-compose exec frontend pnpm test
 ```
 
 ## Security Measures
