@@ -13,42 +13,42 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        1400,
-        1040
+        -240,
+        120
       ],
       "webhookId": "ask",
-      "id": "314f6708-5878-47eb-ae42-b0914dbc9900"
+      "id": "19dd9634-bbd1-4da7-b5d8-1af5fc657c46"
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "{{ $json.body.chatInput }}",
         "options": {
-          "systemMessage": "=You are a helpful assistant that answers questions about books and news headlines. You have access to two APIs:\\n\\n1. Books API: Use this API when the user's query contains ANY of these words:\\n   - book\\n   - price\\n   - category\\n   - title\\n  - under\\n   - recommend\\n   - search\\n   - find.\\n   The Books API provides titles, categories, image url, and prices.\\n\\n2. Headlines API: Use this API when the user's query contains ANY of these words:\\n  -show\\n  - tech\\n   - news\\n   - headlines\\n   - articles\\n  - trending\\n  - update\\n   - latest.\\n   The Headlines API provides titles, scores, and url.\\n\\nToday is {{ $now.format('cccc') }} {{ $now.format('yyyy-MM-dd HH:mm') }}."
+          "systemMessage": "=You are an effective and a helpful assistant that answers questions about books and news headlines. You have access to two APIs:\n1. Books API: Use ONLY when the user explicitly asks for book information, recommendations, or searches for specific books. The API provides titles, categories, and prices.\n2. Headlines API: Use ONLY when the user explicitly asks for news headlines or specifically requests tech news. The API provides the latest articles.\nGuidelines:\n- Only use the Books API if the user's question is about books\n- Only use the Headlines API if the user's question is about news or headlines\n- If the user asks for both books and news, use both APIs\n- If the user's question is general or doesn't specifically request books or news, respond without using any API\n- For tech news requests, only return technology-related headlines\nToday is {{ $now.format('cccc') }} {{ $now.format('yyyy-MM-dd HH:mm') }}."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.8,
       "position": [
-        1640,
-        920
+        0,
+        0
       ],
-      "id": "db26dc15-048f-47b7-bd5d-4527cb91d0aa",
+      "id": "3c958bae-0bb0-421b-bc64-35032801f1fe",
       "name": "AI Agent"
     },
     {
       "parameters": {
         "toolDescription": "Headlines API",
-        "url": "http://backend:7013/headlines",
+        "url": "http://backend:7013/headlines?limit=10",
         "optimizeResponse": true
       },
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "position": [
-        1880,
-        1240
+        240,
+        320
       ],
-      "id": "04ffc6d1-be40-4199-955e-0f22c371cbd2",
+      "id": "12ccb830-e8b2-4dc7-b64c-bc87349669b6",
       "name": "Headlines API"
     },
     {
@@ -60,10 +60,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "position": [
-        2000,
-        1220
+        360,
+        300
       ],
-      "id": "1153f01a-84f3-4e5f-b515-f5663c14be07",
+      "id": "fc741361-bdbc-41d9-ac2b-60f9b793fe66",
       "name": "Books API"
     },
     {
@@ -82,10 +82,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        2060,
-        920
+        420,
+        0
       ],
-      "id": "ee90b751-95ba-4be6-9870-03efb7cb3b28",
+      "id": "1ceae52c-157d-4248-b12d-46a7ab7220dd",
       "alwaysOutputData": true
     },
     {
@@ -96,14 +96,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        1560,
-        1220
+        -80,
+        300
       ],
-      "id": "469602d6-11a0-46ed-a71c-5ab1ef33e707",
+      "id": "8eaf0536-076c-47f9-a126-17eb9a752fed",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "bB44U9t6iboitJ1b",
+          "id": "UmN6Ag77PN2PoVzi",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -113,20 +113,14 @@
         "sessionIdType": "customKey",
         "sessionKey": "={{ $json.body.sessionId }}"
       },
-      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
-      "typeVersion": 1.5,
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
       "position": [
-        1740,
-        1240
+        80,
+        320
       ],
-      "id": "ea5139c2-b88b-4782-98b9-9ae17e72d918",
-      "name": "Redis Chat Memory",
-      "credentials": {
-        "redis": {
-          "id": "1mwImy3E4Pwvz6WV",
-          "name": "Redis account"
-        }
-      }
+      "id": "2c819710-1cad-4f0b-932d-1cc981936043",
+      "name": "Simple Memory"
     }
   ],
   "pinData": {},
@@ -186,7 +180,7 @@
         ]
       ]
     },
-    "Redis Chat Memory": {
+    "Simple Memory": {
       "ai_memory": [
         [
           {
@@ -202,11 +196,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f4ff5b5c-ede3-47ee-843b-45c26b95fd8b",
+  "versionId": "8bdce5be-4900-4808-a31e-7542dd546611",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "306cb519cfbd1324a954d7e1f6fd4cc215b6e1e8d0e8f7252c23a9389be46bcf"
   },
-  "id": "EHlWi2MBsusHcs7P",
+  "id": "QhVr0xPOQxN4XQpD",
   "tags": []
 }
