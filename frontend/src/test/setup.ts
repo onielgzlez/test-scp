@@ -1,10 +1,7 @@
 import { afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/dom';
+import '@testing-library/dom';
 
 // Clean up after each test
-afterEach(() => {
-  cleanup();
-});
 
 // Mock localStorage
 const localStorageMock = (() => {
