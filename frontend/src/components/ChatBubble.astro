@@ -1,0 +1,23 @@
+---
+export interface Props {
+  role: 'user' | 'assistant';
+  message: string;
+  timestamp: string;
+}
+
+const { role, message, timestamp } = Astro.props;
+---
+
+<div class={`flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+  <div
+    class={`max-w-[80%] rounded-lg px-4 py-2 ${
+      role === 'user'
+        ? 'bg-blue-600 text-white'
+        : 'bg-gray-800 text-white'
+    }`}
+  >
+    <div class="text-sm sm:text-base"
+      set:html={message}></div>
+    <p class="text-xs mt-1 opacity-70">{timestamp}</p>
+  </div>
+</div>

@@ -1,15 +1,21 @@
-# Build stage
-FROM node:lts as build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-RUN npm install --save-dev @types/vue @types/axios
-COPY . .
-RUN npm run build
+FROM node:lts-alpine
 
-# Production stage
-FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+
+# Instalar pnpm globalmente
+RUN npm install -g pnpm
+
+# Copiar solo los archivos esenciales antes de instalar dependencias
+COPY package.json ./
+
+# Instalar dependencias dentro del contenedor
+RUN pnpm install --ignore-scripts
+
+# Copiar el resto de los archivos de la aplicación
+COPY . .
+
+# Exponer el puerto 3000
 EXPOSE 3000
-CMD ["nginx", "-g", "daemon off;"] 
+
+# Ejecutar la aplicación
+CMD ["sh", "/app/entrypoint.sh"]

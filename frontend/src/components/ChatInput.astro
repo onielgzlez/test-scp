@@ -1,0 +1,87 @@
+<div class="border-t border-gray-700 py-4 px-4 sm:px-6 bg-gray-900">
+  <div class="flex items-center">
+    <form id="chat-form" class="flex-1 flex">
+      <input
+        id="chat-input"
+        type="text"
+        placeholder="Type your message here..."
+        class="flex-1 p-3 border border-gray-700 rounded-l-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+        autocomplete="off"
+        required
+      />
+      <button
+        type="submit"
+        class="bg-blue-600 text-white rounded-r-lg px-4 py-3 transition-colors hover:bg-blue-700"
+        aria-label="Send message"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+          <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+        </svg>
+      </button>
+    </form>
+    <button
+      id="voice-input-btn"
+      class="ml-2 bg-green-600 hover:bg-green-700 text-white rounded-lg p-3 transition-colors"
+      aria-label="Voice Input"
+      title="Voice Input"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+        <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
+        <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
+      </svg>
+    </button>
+  </div>
+  <div id="voice-status" class="text-xs text-gray-400 mt-2 hidden">
+    Listening...
+  </div>
+</div>
+
+<script>
+  import { $ } from '../lib/dom-selector'
+  
+  let recognition: any = null
+  const isRecognitionSupported = 'SpeechRecognition' in window
+    || 'webkitSpeechRecognition' in window
+
+  if (isRecognitionSupported) {
+    const SpeechRecognitionAPI: any = (window as any).SpeechRecognition
+     || (window as any).webkitSpeechRecognition
+    
+    if (SpeechRecognitionAPI) {
+      recognition = new SpeechRecognitionAPI()
+      recognition.continuous = false
+      recognition.interimResults = false
+      recognition.lang = 'en-US'
+    }
+  }
+
+  const input = $('#chat-input') as HTMLInputElement
+  const voiceBtn = $('#voice-input-btn') as HTMLButtonElement
+  const voiceStatus = $('#voice-status') as HTMLDivElement
+
+  if (isRecognitionSupported && recognition) {
+    voiceBtn.addEventListener('click', () => {
+      recognition?.start()
+      voiceStatus.classList.remove('hidden')
+    })
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript
+      input.value = transcript
+      voiceStatus.classList.add('hidden')
+    }
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error)
+      voiceStatus.classList.add('hidden')
+    }
+
+    recognition.onend = () => {
+      voiceStatus.classList.add('hidden')
+    }
+  } else {
+    voiceBtn.disabled = true
+    voiceBtn.title = 'Voice input not supported in this browser'
+    voiceBtn.classList.add('opacity-50')
+  }
+</script>

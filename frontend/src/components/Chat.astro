@@ -1,0 +1,268 @@
+---
+import ChatBubble from './ChatBubble.astro';
+import ChatInput from './ChatInput.astro';
+
+interface Message {
+  id: string,
+  role: 'user' | 'assistant',
+  content: string,
+  timestamp: string,
+}
+
+// Initial welcome message
+const initialMessages: Message[] = [
+  {
+    id: 'welcome',
+    role: 'assistant',
+    content: 'Hello! I\'m your virtual assistant. How can I help you today?',
+    timestamp: new Date().toLocaleTimeString(),
+  },
+]
+---
+
+<div class="flex flex-col h-full max-h-[600px] rounded-lg border border-gray-200 border-gray-700 overflow-hidden">
+  <div class="bg-gray-900 p-4 border-b border-gray-200 border-gray-700 flex justify-between items-center">
+    <div>
+      <h2 class="text-lg font-semibold text-black text-white">Virtual Assistant</h2>
+      <p class="text-sm text-white">Ask me about books or headlines</p>
+    </div>
+  </div>
+  
+  <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-gray-900">
+    {initialMessages.map((message) => (
+      <ChatBubble
+        role={message.role}
+        message={message.content}
+        timestamp={message.timestamp}
+      />
+    ))}
+  </div>
+  
+  <ChatInput />
+</div>
+
+<script>
+  import sendQuery from '../utils/api'
+  import { $ } from '../lib/dom-selector'
+  import { marked } from 'marked'
+  import DOMPurify from 'dompurify'
+
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+    headerIds: false,
+    mangle: false
+  })
+  
+  interface Message {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+  }
+
+  // DOM elements
+  const chatMessages = $('#chat-messages') as HTMLDivElement;
+  const chatForm = $('#chat-form') as HTMLFormElement;
+  const chatInput = $('#chat-input') as HTMLInputElement;
+
+  // In-memory message store for the current session
+  let messages: Message[] = [
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: 'Hello! I\'m your virtual assistant. How can I help you today?',
+      timestamp: new Date().toLocaleTimeString(),
+    },
+  ]
+
+  // Add a new message to the chat
+  function addMessage(message: Message, requireFormat: boolean = false) {
+    messages.push(message)
+    
+    // Create chat bubble element
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = `flex w-full ${message.role === 'user'
+      ? 'justify-end'
+      : 'justify-start'} mb-4`
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = `max-w-[80%] rounded-lg px-4 py-2 ${
+      message.role === 'user'
+        ? 'bg-blue-500 text-white'
+        : 'bg-gray-200 bg-gray-800 text-gray-800 text-white'
+    }`
+
+    const messageP = document.createElement('div')
+    messageP.className = 'text-sm sm:text-base max-w-none'
+
+    if (requireFormat) {
+      messageP.innerHTML = formatMessage(message.content)
+    } else {
+      messageP.textContent = message.content
+    }
+    
+    const timestampP = document.createElement('p')
+    timestampP.className = 'text-xs mt-1 opacity-70'
+    timestampP.textContent = message.timestamp
+    
+    contentDiv.appendChild(messageP)
+    contentDiv.appendChild(timestampP)
+    bubbleDiv.appendChild(contentDiv)
+    chatMessages.appendChild(bubbleDiv)
+    
+    // Scroll to bottom
+    scrollToBottom()
+  }
+
+  // Scroll chat to bottom
+  function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight
+  }
+
+  setupImageLoading()
+
+  function formatMessage(content: string): string {
+    // Convertir markdown a HTML
+    const html = marked(content)
+    // Sanitizar el HTML
+    const cleanHtml = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+        ADD_ATTR: ['target', 'rel']
+      })
+      
+      // Añadir target="_blank" y rel="noopener noreferrer" a todos los enlaces
+      const doc = new DOMParser().parseFromString(cleanHtml, 'text/html')
+      
+      // Convertir enlaces de imágenes de books.toscrape.com a etiquetas img
+      const links = doc.getElementsByTagName('a')
+      Array.from(links).forEach(link => {
+        const href = link.getAttribute('href')
+
+        if (href && href.includes('books.toscrape.com/media')) {
+          const img = doc.createElement('img')
+          img.setAttribute('src', href)
+          img.setAttribute('alt', 'Book cover')
+          img.setAttribute('class', 'max-w-[200px] h-auto rounded-lg my-2')
+          link.parentNode?.replaceChild(img, link)
+        } else {
+          link.setAttribute('target', '_blank')
+          link.setAttribute('rel', 'noopener noreferrer')
+        }
+      })
+      
+    return doc.body.innerHTML
+  }
+
+  function setupImageLoading() {
+    // Observar cambios en el DOM para manejar la carga de imágenes
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.addedNodes) {
+            mutation.addedNodes.forEach((node) => {
+              if (node instanceof HTMLElement) {
+                const images = node.getElementsByTagName('img')
+                Array.from(images).forEach((img) => {
+                  img.classList.add('opacity-50', 'bg-gray-100')
+                  img.onload = () => {
+                    img.classList.remove('opacity-50', 'bg-gray-100')
+                  }
+                  img.onerror = () => {
+                    img.classList.remove('opacity-50', 'bg-gray-100')
+                    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2YjcyODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgZm91bmQ8L3RleHQ+PC9zdmc+'
+                  }
+                })
+              }
+            })
+          }
+        })
+      })
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    })
+  }
+
+  // Handle form submission
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    
+    const userInput = chatInput.value.trim()
+
+    if (!userInput) return
+    
+    // Clear input
+    chatInput.value = ''
+    
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: userInput,
+      timestamp: new Date().toLocaleTimeString(),
+    }
+    addMessage(userMessage)
+    const typingId = 'typing-indicator'
+
+    try {
+      // Show typing indicator      
+      const typingDiv = document.createElement('div')
+      typingDiv.id = typingId;
+      typingDiv.className = 'flex w-full justify-start mb-4'
+      typingDiv.innerHTML = `
+        <div class="max-w-[80%] rounded-lg px-4 py-2 bg-gray-200 bg-gray-800 text-gray-800 text-white">
+          <div class="flex space-x-2">
+            <div class="w-2 h-2 rounded-full bg-gray-400 bg-gray-600 animate-pulse"></div>
+            <div class="w-2 h-2 rounded-full bg-gray-400 bg-gray-600 animate-pulse"></div>
+            <div class="w-2 h-2 rounded-full bg-gray-400 bg-gray-600 animate-pulse"></div>
+          </div>
+        </div>
+      `
+      chatMessages.appendChild(typingDiv)
+      scrollToBottom()
+      
+      // Send query to API
+      const result = await sendQuery(userInput)
+      // Remove typing indicator
+      $(`#${typingId}`)?.remove()
+
+      if (result.error) {
+        console.error('Error sending message:', result.error)
+        // Add error message
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: 'Sorry, there was an error processing your request. Please try again.',
+          timestamp: new Date().toLocaleTimeString(),
+        }
+        addMessage(errorMessage)
+      } else {
+        // Create the assistant message base
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: result.response,
+          timestamp: new Date().toLocaleTimeString(),
+        }
+        // Add assistant response
+        addMessage(assistantMessage, true)
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      
+      // Remove typing indicator if it exists
+      $(`#${typingId}`)?.remove()
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: 'Sorry, there was an error processing your request. Please try again.',
+        timestamp: new Date().toLocaleTimeString(),
+      }
+      addMessage(errorMessage)
+    }
+  })
+</script>

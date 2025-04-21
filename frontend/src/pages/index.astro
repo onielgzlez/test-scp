@@ -1,0 +1,61 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Chat from '../components/Chat.astro';
+import Header from '../components/Header.astro';
+import Features from '../components/Features.astro';
+---
+
+<Layout title="Virtual Assistant - Powered by N8N">
+  <main class="flex-1 flex flex-col items-center justify-start w-full">
+    <div class="container w-full max-w-6xl px-4 py-8 sm:py-12 mx-auto">
+      <section class="mx-auto w-full max-w-4xl">
+        <Header />
+        
+        <div class="bg-white bg-gray-900 rounded-lg shadow-lg overflow-hidden h-[500px] mb-16 border border-gray-200 border-gray-700">
+          <Chat />
+        </div>
+
+        <Features />
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline define:vars={{ executed: false }}>
+  if (typeof window !== 'undefined' && !executed) {
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check if the browser supports speech recognition
+      const isRecognitionSupported = 'SpeechRecognition' in window
+        || 'webkitSpeechRecognition' in window
+      
+        // Update the voice input feature card if not supported
+      if (!isRecognitionSupported) {
+        const voiceCard = document.querySelector('#voice-feature');
+
+        if (voiceCard) {
+          const title = voiceCard.querySelector('.voice-title')
+          const description = voiceCard.querySelector('.voice-description')
+          
+          if (title) {
+            title.classList.add('text-gray-400', 'text-gray-600')
+            title.classList.remove('text-black', 'text-white')
+          }
+          
+          if (description) {
+            description.textContent =
+              'Voice input is not supported in your current browser.'
+            description.classList.add('text-gray-400', 'text-gray-600')
+            description.classList.remove('text-gray-800', 'text-gray-300')
+          }
+          
+          const icon = voiceCard.querySelector('.voice-icon');
+
+          if (icon) {
+            icon.classList.remove('text-green-500')
+            icon.classList.add('text-gray-400', 'text-gray-600')
+          }
+        }
+      }
+    })
+  }
+</script> 
