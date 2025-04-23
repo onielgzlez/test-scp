@@ -11,10 +11,6 @@ dist
 # Testing
 coverage
 
-# Environment variables
-.env.*
-!.env.example
-
 # Editor directories and files
 .vscode
 .idea
