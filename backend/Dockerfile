@@ -15,6 +15,7 @@ RUN pip install poetry
 
 # Copy all files
 COPY . .
+COPY .env.example .env
 
 # Install dependencies
 RUN poetry config virtualenvs.create false \
